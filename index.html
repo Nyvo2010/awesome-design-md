@@ -265,6 +265,7 @@
       selected: null,
       designs: [],
       cache: new Map(),
+      baseDir: null,
     };
 
     function setPreviewTheme(theme, updateIcon = true) {
@@ -325,10 +326,36 @@
       return { owner, repo, base: `https://api.github.com/repos/${owner}/${repo}` };
     }
 
+    function getRepoPath(...segments) {
+      return normalizeRepoPath([state.baseDir || '', ...segments].filter(Boolean).join('/'));
+    }
+
+    async function detectDesignRoot() {
+      const rootContents = await fetchJson(`${REPO.base}/contents`);
+      const designMdDir = rootContents.find(item => item.type === 'dir' && item.name.toLowerCase() === 'design-md');
+      if (designMdDir) return designMdDir.path;
+
+      const candidateDirs = rootContents.filter(item => item.type === 'dir');
+      for (const dir of candidateDirs) {
+        try {
+          const dirContents = await fetchJson(`${REPO.base}/contents/${dir.path}`);
+          const names = new Set(dirContents.map(item => item.name.toLowerCase()));
+          if (names.has('design.md') && names.has('readme.md')) {
+            return '';
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      return 'design-md';
+    }
+
     const REPO = getRepoInfo();
 
     async function loadDesigns() {
-      const root = await fetchJson(`${REPO.base}/contents/design-md`);
+      state.baseDir = await detectDesignRoot();
+      const root = state.baseDir ? await fetchJson(`${REPO.base}/contents/${state.baseDir}`) : await fetchJson(`${REPO.base}/contents`);
       state.designs = root.filter(item => item.type === 'dir').map(item => ({
         slug: item.name,
         title: item.name.replace(/[-_.]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
@@ -353,16 +380,18 @@
 
     function updatePreviewSrc() {
       if (!state.selected) return;
+      const prefix = state.baseDir ? `${state.baseDir}/` : '';
       const previewFile = state.previewTheme === 'light' ? 'preview.html' : 'preview-dark.html';
-      preview.src = `design-md/${state.selected.slug}/${previewFile}`;
+      preview.src = `${prefix}${state.selected.slug}/${previewFile}`;
     }
 
     async function selectDesign(design) {
       state.selected = design;
       updatePreviewSrc();
+      const prefix = state.baseDir ? `${state.baseDir}/` : '';
       const [designMd, readmeMd] = await Promise.all([
-        fetchText(`design-md/${design.slug}/DESIGN.md`),
-        fetchText(`design-md/${design.slug}/README.md`),
+        fetchText(`${prefix}${design.slug}/DESIGN.md`),
+        fetchText(`${prefix}${design.slug}/README.md`),
       ]);
       designContent.innerHTML = `<pre><code>${escapeHtml(designMd)}</code></pre>`;
       readmeContent.innerHTML = `<pre><code>${escapeHtml(readmeMd)}</code></pre>`;
