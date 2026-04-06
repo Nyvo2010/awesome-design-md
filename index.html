@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awesome DESIGN.md Explorer</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons&display=swap">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { overflow: hidden; }
+    body { font-family: Inter, system-ui, sans-serif; background:#070707; }
+    main { overflow: auto; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar, main::-webkit-scrollbar { display: none; }
+    html { -ms-overflow-style: none; scrollbar-width: none; }
+    main { -ms-overflow-style: none; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius:999px; }
+    .scroll::-webkit-scrollbar-track { background: transparent; }
+    .fade { transition: opacity .18s ease, transform .18s ease; }
+    .preview-shell { min-height: 620px; }
+    .panel > div:first-child { min-height: 72px; }
+    .preview-toggle {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 20;
+      width: 44px;
+      height: 44px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(10,10,10,.92);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+    }
+    .preview-toggle:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .preview-toggle-icon {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+    .preview-toggle-icon.animate-toggle {
+      animation: spinFade 420ms ease forwards;
+    }
+    .copy-button {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      transition: transform 180ms ease, background-color 180ms ease;
+      color: rgba(255,255,255,.85);
+    }
+    .copy-button:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.14);
+    }
+    .copy-icon {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      transition: transform 180ms ease;
+    }
+    .copy-icon.checked {
+      transform: scale(1.2);
+    }
+    @keyframes spinFade {
+      0% { opacity: 1; transform: rotate(0deg) scale(1); }
+      50% { opacity: 0; transform: rotate(180deg) scale(0.9); }
+      100% { opacity: 1; transform: rotate(360deg) scale(1); }
+    }
+    .collapse-icon {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      transition: transform 180ms ease;
+    }
+    .document-icon {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      color: rgba(255,255,255,.7);
+    }
+    .markdown pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .collapse-icon.open {
+      transform: rotate(180deg);
+    }
+    .markdown { font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+    .markdown h1,.markdown h2,.markdown h3 { font-weight: 700; color: inherit; margin: 1rem 0 .5rem; }
+    .markdown h1 { font-size: 1.3rem; }
+    .markdown h2 { font-size: 1.1rem; }
+    .markdown h3 { font-size: 1rem; }
+    .markdown a { text-decoration: underline; }
+    .markdown code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+    .markdown pre { overflow:auto; padding:1rem; border-radius:.75rem; background: rgba(255,255,255,.04); }
+    .markdown ul { padding-left: 1.25rem; list-style: disc; }
+    .markdown ol { padding-left: 1.25rem; list-style: decimal; }
+    .markdown table { width:100%; border-collapse: collapse; font-size: .92em; }
+    .markdown th,.markdown td { border:1px solid rgba(255,255,255,.12); padding:.5rem .6rem; text-align:left; }
+    .sidebar-item.active { box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+    .github-star {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      padding: 0.9rem 1rem;
+      font-size: 0.92rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,.06);
+      color: #f8fafc;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,.08);
+      transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+    }
+    .github-star:hover {
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.14);
+      transform: translateY(-1px);
+    }
+    .github-icon {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #f8fafc;
+      fill: currentColor;
+    }
+    .theme-dark { background: #070707; color:#efefef; }
+    .theme-dark .panel,
+    .theme-dark .surface { background: rgba(16,16,16,.92); border-color: rgba(255,255,255,.08); }
+    iframe { background:#fff; }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="h-screen w-full flex overflow-hidden" id="app" data-theme="dark">
+    <aside class="w-80 flex-shrink-0 border-r border-white/10 bg-black/30 flex flex-col">
+      <div class="p-5 border-b border-white/10">
+        <div class="mt-2 text-lg font-semibold">Design.md</div>
+        <div class="mt-1 text-sm text-white/55">Awesome DESIGN.md files.</div>
+      </div>
+      <div class="p-4 border-b border-white/10">
+        <input id="search" class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-white/35" placeholder="Search designs">
+      </div>
+      <div id="list" class="flex-1 overflow-auto scroll p-3 space-y-1"></div>
+      <div class="p-5 border-t border-white/10">
+        <a class="github-star" href="https://github.com/VoltAgent/awesome-design-md" target="_blank" rel="noopener noreferrer">
+          <span class="github-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.01-2.07-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.09-.75.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.84 2.8 1.31 3.48 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.01 2.05.14 3 .4 2.28-1.55 3.28-1.23 3.28-1.23.66 1.65.24 2.87.12 3.17.77.84 1.23 1.91 1.23 3.22 0 4.62-2.8 5.64-5.47 5.94.43.37.82 1.1.82 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.69.82.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12Z"></path></svg></span>
+          Star on GitHub
+        </a>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-auto scroll p-5 lg:p-6 space-y-5">
+      <section class="panel preview-shell rounded-2xl border overflow-hidden relative">
+        <button id="themeToggle" class="preview-toggle" aria-label="Toggle preview theme">
+          <span class="preview-toggle-icon" id="themeToggleIcon">light_mode</span>
+        </button>
+        <iframe id="preview" title="Preview" class="w-full h-[620px] border-0"></iframe>
+      </section>
+
+      <section class="panel rounded-2xl border overflow-hidden">
+        <div id="designToggle" class="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer">
+              <div class="flex items-center gap-2">
+            <span class="material-icons document-icon">description</span>
+            <div class="mt-1 font-medium" id="designTitle">DESIGN.md</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="copyDesign" class="copy-button" aria-label="Copy design markdown">
+              <span id="copyDesignIcon" class="copy-icon">content_copy</span>
+            </button>
+            <span id="designArrow" class="material-icons collapse-icon">expand_more</span>
+          </div>
+        </div>
+        <div id="designBody" class="hidden border-t border-white/10 px-5 py-4">
+          <div id="designContent" class="markdown max-h-[36vh] overflow-auto scroll"></div>
+        </div>
+      </section>
+
+      <section class="panel rounded-2xl border overflow-hidden">
+        <div id="readmeToggle" class="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer">
+          <div class="flex items-center gap-2">
+            <span class="material-icons document-icon">description</span>
+            <div class="mt-1 font-medium" id="readmeTitle">README.md</div>
+          </div>
+          <span id="readmeArrow" class="material-icons collapse-icon">expand_more</span>
+        </div>
+        <div id="readmeBody" class="hidden border-t border-white/10 px-5 py-4">
+          <div id="readmeContent" class="markdown max-h-[36vh] overflow-auto scroll"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const app = document.getElementById('app');
+    const list = document.getElementById('list');
+    const search = document.getElementById('search');
+    const preview = document.getElementById('preview');
+    const themeToggle = document.getElementById('themeToggle');
+    const designToggle = document.getElementById('designToggle');
+    const readmeToggle = document.getElementById('readmeToggle');
+    const copyDesign = document.getElementById('copyDesign');
+    const designBody = document.getElementById('designBody');
+    const readmeBody = document.getElementById('readmeBody');
+    const designContent = document.getElementById('designContent');
+    const readmeContent = document.getElementById('readmeContent');
+    const designTitle = document.getElementById('designTitle');
+    const readmeTitle = document.getElementById('readmeTitle');
+    const designArrow = document.getElementById('designArrow');
+    const readmeArrow = document.getElementById('readmeArrow');
+    const copyDesignIcon = document.getElementById('copyDesignIcon');
+    let copyDesignTimer = null;
+
+    const state = {
+      previewTheme: localStorage.getItem('design-explorer-preview-theme') || 'dark',
+      query: '',
+      selected: null,
+      designs: [],
+      cache: new Map(),
+    };
+
+    function setPreviewTheme(theme, updateIcon = true) {
+      state.previewTheme = theme;
+      localStorage.setItem('design-explorer-preview-theme', theme);
+      if (updateIcon) {
+        const icon = document.getElementById('themeToggleIcon');
+        if (icon) icon.textContent = theme === 'light' ? 'light_mode' : 'brightness_2';
+      }
+      if (themeToggle) themeToggle.title = theme === 'light' ? 'Switch preview to dark' : 'Switch preview to light';
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function markdownToHtml(md) {
+      const lines = md.replace(/\r\n/g, '\n').split('\n');
+      let html = '';
+      let inCode = false;
+      let code = [];
+      for (const line of lines) {
+        if (line.startsWith('```')) {
+          if (inCode) {
+            html += `<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`;
+            inCode = false; code = [];
+          } else inCode = true;
+          continue;
+        }
+        if (inCode) { code.push(line); continue; }
+        if (/^#\s+/.test(line)) html += `<h1>${escapeHtml(line.replace(/^#\s+/, ''))}</h1>`;
+        else if (/^##\s+/.test(line)) html += `<h2>${escapeHtml(line.replace(/^##\s+/, ''))}</h2>`;
+        else if (/^###\s+/.test(line)) html += `<h3>${escapeHtml(line.replace(/^###\s+/, ''))}</h3>`;
+        else if (/^-\s+/.test(line)) html += `<ul><li>${escapeHtml(line.replace(/^-\s+/, ''))}</li></ul>`;
+        else if (/^\d+\.\s+/.test(line)) html += `<ol><li>${escapeHtml(line.replace(/^\d+\.\s+/, ''))}</li></ol>`;
+        else if (line.trim() === '') html += '<div style="height:.6rem"></div>';
+        else html += `<p>${escapeHtml(line)}</p>`;
+      }
+      return html.replace(/<\/ul>\s*<ul>/g, '').replace(/<\/ol>\s*<ol>/g, '');
+    }
+
+    function normalizeRepoPath(path) {
+      return path.replace(/^\/+/, '');
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      return res.json();
+    }
+
+    function getRepoInfo() {
+      const hostMatch = location.hostname.match(/^([^.]+)\.github\.io$/);
+      const owner = hostMatch ? hostMatch[1] : 'Nyvo2010';
+      const repo = location.hostname.endsWith('github.io') && location.pathname.split('/').filter(Boolean)[0]
+        ? location.pathname.split('/').filter(Boolean)[0]
+        : 'awesome-design-md';
+      return { owner, repo, base: `https://api.github.com/repos/${owner}/${repo}` };
+    }
+
+    const REPO = getRepoInfo();
+
+    async function loadDesigns() {
+      const root = await fetchJson(`${REPO.base}/contents/design-md`);
+      state.designs = root.filter(item => item.type === 'dir').map(item => ({
+        slug: item.name,
+        title: item.name.replace(/[-_.]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        path: item.path,
+      })).sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    function filteredDesigns() {
+      const q = state.query.trim().toLowerCase();
+      return q ? state.designs.filter(d => d.title.toLowerCase().includes(q) || d.slug.toLowerCase().includes(q)) : state.designs;
+    }
+
+    async function fetchText(path) {
+      const key = normalizeRepoPath(path);
+      if (state.cache.has(key)) return state.cache.get(key);
+      const res = await fetch(`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/main/${key}`);
+      if (!res.ok) throw new Error(`Failed to load ${key}`);
+      const text = await res.text();
+      state.cache.set(key, text);
+      return text;
+    }
+
+    function updatePreviewSrc() {
+      if (!state.selected) return;
+      const previewFile = state.previewTheme === 'light' ? 'preview.html' : 'preview-dark.html';
+      preview.src = `design-md/${state.selected.slug}/${previewFile}`;
+    }
+
+    async function selectDesign(design) {
+      state.selected = design;
+      updatePreviewSrc();
+      const [designMd, readmeMd] = await Promise.all([
+        fetchText(`design-md/${design.slug}/DESIGN.md`),
+        fetchText(`design-md/${design.slug}/README.md`),
+      ]);
+      designContent.innerHTML = `<pre><code>${escapeHtml(designMd)}</code></pre>`;
+      readmeContent.innerHTML = `<pre><code>${escapeHtml(readmeMd)}</code></pre>`;
+      copyDesign.dataset.clipboard = designMd;
+    }
+
+    function renderList() {
+      const items = filteredDesigns();
+      list.innerHTML = items.map(item => `
+        <button class="sidebar-item w-full rounded-xl border border-transparent px-4 py-3 text-left transition ${state.selected?.slug === item.slug ? 'active bg-white/10 text-white' : 'bg-white/[0.03] text-white/70 hover:bg-white/[0.06]' }" data-slug="${item.slug}">
+          <div class="text-sm font-medium">${item.title}</div>
+        </button>
+      `).join('') || '<div class="px-4 py-6 text-sm text-white/40">No matches</div>';
+      list.querySelectorAll('button[data-slug]').forEach(btn => btn.addEventListener('click', () => {
+        const found = state.designs.find(d => d.slug === btn.dataset.slug);
+        if (found) selectDesign(found).then(renderList);
+      }));
+    }
+
+    function togglePanel(body, arrow) {
+      const open = body.classList.toggle('hidden');
+      if (open) {
+        if (arrow) {
+          arrow.textContent = 'expand_less';
+          arrow.classList.add('open');
+        }
+      } else {
+        if (arrow) {
+          arrow.textContent = 'expand_more';
+          arrow.classList.remove('open');
+        }
+      }
+    }
+
+    async function init() {
+      setPreviewTheme(state.previewTheme);
+      if (designArrow) {
+        designArrow.textContent = 'expand_more';
+        designArrow.classList.remove('open');
+      }
+      if (readmeArrow) {
+        readmeArrow.textContent = 'expand_more';
+        readmeArrow.classList.remove('open');
+      }
+      try {
+        await loadDesigns();
+        renderList();
+        if (state.designs[0]) await selectDesign(state.designs[0]);
+      } catch (error) {
+        list.innerHTML = `<div class="px-4 py-6 text-sm text-red-300">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    let themeToggleTimer = null;
+
+    search.addEventListener('input', e => { state.query = e.target.value; renderList(); });
+    themeToggle.addEventListener('click', () => {
+      const icon = document.getElementById('themeToggleIcon');
+      const nextTheme = state.previewTheme === 'dark' ? 'light' : 'dark';
+      setPreviewTheme(nextTheme, false);
+      updatePreviewSrc();
+
+      if (icon) {
+        icon.classList.remove('animate-toggle');
+        void icon.offsetWidth;
+        icon.classList.add('animate-toggle');
+      }
+
+      if (themeToggleTimer) clearTimeout(themeToggleTimer);
+      themeToggleTimer = setTimeout(() => {
+        if (icon) {
+          icon.textContent = nextTheme === 'light' ? 'light_mode' : 'brightness_2';
+        }
+        themeToggleTimer = null;
+      }, 130);
+    });
+    designToggle.addEventListener('click', () => togglePanel(designBody, designArrow));
+    readmeToggle.addEventListener('click', () => togglePanel(readmeBody, readmeArrow));
+    copyDesign.addEventListener('click', async () => {
+      const text = copyDesign.dataset.clipboard || '';
+      await navigator.clipboard.writeText(text);
+      if (copyDesignIcon) {
+        copyDesignIcon.textContent = 'check';
+        copyDesignIcon.classList.add('checked');
+      }
+      if (copyDesignTimer) clearTimeout(copyDesignTimer);
+      copyDesignTimer = setTimeout(() => {
+        if (copyDesignIcon) {
+          copyDesignIcon.textContent = 'content_copy';
+          copyDesignIcon.classList.remove('checked');
+        }
+        copyDesignTimer = null;
+      }, 900);
+    });
+
+    init();
+  </script>
+</body>
+</html>
